@@ -29,9 +29,14 @@
       getLists: catchWrap(() => (getLayoutItem('explore', 'trends').map(item => item.content.items))),
       isPromoted: catchWrap(item => item.content.promotedMetadata),
     }, {
-      // Tweet
-      ruleName: 'Tweet',
+      // Tweet; Home
+      ruleName: 'Tweet Home',
       getLists: catchWrap(() => getLayoutItem('home').map(item => item.entries)),
+      isPromoted: catchWrap(item => item.content.promotedMetadata),
+    }, {
+      // Tweet; User
+      ruleName: 'Tweet User',
+      getLists: catchWrap(() => getLayoutItem('userTweets').map(item => item.entries)),
       isPromoted: catchWrap(item => item.content.promotedMetadata),
     }, {
       // Who to follow
