@@ -1,84 +1,79 @@
 ; (function () {
 
   const debugEnabled = localStorage.getItem('__block_twitter_promoted_debug__') === 'enable';
+  let userOptions = null;
 
   /*
-   * Modify the store object, remove any Promoted contents in it.
+   * Exception is harmless, some time
+   * Lets ignore it
    */
-  const cleanPromoted = function (state) {
-    const catchWrap = function (f) {
-      return function (...args) {
-        try {
-          return f(...args);
-        } catch (e) { /* ignore */ }
-        return (void 0);
-      };
-    };
-    const getLayoutItem = catchWrap((prefix, subPrefix) => {
-      const list = Object.keys(state.urt)
-        .filter(name => name.split('-')[0] === prefix)
-        .map(name => state.urt[name]);
-      if (!subPrefix) return list;
-      return list.map(catchWrap(inner => (
-        inner.entries.filter(entry => entry.entryId.split('-')[0] === subPrefix)
-      ))).reduce((a, b) => a.concat(b || []), []);
-    });
-    [{
-      // Trends
-      ruleName: 'Trend',
-      getLists: catchWrap(() => (getLayoutItem('explore', 'trends').map(item => item.content.items))),
-      isPromoted: catchWrap(item => item.content.promotedMetadata),
-    }, {
-      // Tweet; Home
-      ruleName: 'Tweet Home',
-      getLists: catchWrap(() => getLayoutItem('home').map(item => item.entries)),
-      isPromoted: catchWrap(item => item.content.promotedMetadata),
-    }, {
-      // Tweet; User
-      ruleName: 'Tweet User',
-      getLists: catchWrap(() => getLayoutItem('userTweets').map(item => item.entries)),
-      isPromoted: catchWrap(item => item.content.promotedMetadata),
-    }, {
-      // Who to follow
-      ruleName: 'Follow',
-      getLists: catchWrap(() => (getLayoutItem('userTweets', 'whoToFollow').map(item => item.content.items))),
-      isPromoted: catchWrap(item => item.content.promotedMetadata),
-    }, {
-      // Who to follow
-      ruleName: 'User Suggest',
-      getLists: catchWrap(() => [state.recommendations.profile_accounts_sidebar.recommendations]),
-      isPromoted: catchWrap(item => state.entities.users.entities[item.user_id].promoted_content),
-    }].forEach(({ ruleName, getLists, isPromoted }) => {
-      const lists = getLists() || [];
-      lists.forEach(list => {
-        if (!list || !Array.isArray(list)) return;
-        let len = list.length, i, j;
-        for (i = j = 0; i < len; i++) {
-          if (!isPromoted(list[i])) {
-            list[j++] = list[i];
-          } else {
-            if (debugEnabled) {
-              console.log('BlockTwitterPromoted | Promoted blocked by %s: %o', ruleName, list[i]);
-            }
-          }
-        }
-        list.length = j;
-      });
-    });
+  const ignoreException = ({ log = null, fallback = (void 0) } = {}) => f => function (...args) {
+    try {
+      return f.apply(this, args);
+    } catch (e) {
+      if (log && debugEnabled) {
+        console.error(log, e);
+      }
+    }
+    return fallback && fallback.apply(this, args);
+  };
+  const mute = ignoreException();
+
+  class CallbackCollection {
+    constructor(wrap) {
+      this.callbacks = [];
+      this.wrap = wrap || (x => x);
+    }
+    addCallback(callback) {
+      this.callbacks.push(this.wrap(callback));
+    }
+  }
+
+  // Callback before / after reducer of store
+  const beforeStoreReducer = new CallbackCollection(mute);
+  const afterStoreReducer = new CallbackCollection(ignoreException({ fallback: x => x }));
+  // Callback when options is ready
+  const userOptionsReady = new CallbackCollection(mute);
+
+  userOptionsReady.addCallback(function (option) {
+    userOptions = option;
+  });
+
+  /*
+   * Read user option
+   */
+  const getOption = function (key, defaultValue) {
+    const option = userOptions[key];
+    if (option == null) return defaultValue;
+    return option;
   };
 
   /*
-   * The Store object is just created. No subscribe may already be injected
-   * at this time. We inject our modifier as first subscriber. Since we are
-   * injected before any other subscriber, we can modify the store object
-   * in-place without getting any troubles.
+   * Wrap the store object so we can run some codes before / after reducer
    */
   const wrapStore = function (Store) {
     if (debugEnabled) {
       console.log('BlockTwitterPromoted | Got Redux store: %o', Store);
     }
+    Store.dispatch = (function (/** @type {Function} */dispatch) {
+      return function (action) {
+        const modifiedAction = beforeStoreReducer.callbacks.reduce((action, callback) => {
+          if (action) return callback(action, Store.getState());
+          return null;
+        }, action);
+        if (modifiedAction) {
+          return dispatch.call(this, modifiedAction);
+        } else return (void 0);
+      };
+    }(Store.dispatch));
+    /*
+     * The Store object is just created. No subscribe may already be injected
+     * at this time. We inject our modifier as first subscriber. Since we are
+     * injected before any other subscriber, we can modify the store object
+     * in-place without getting any troubles.
+     */
     Store.subscribe(() => {
-      cleanPromoted(Store.getState());
+      afterStoreReducer.callbacks.forEach(callback => callback(Store.getState()));
     });
   };
 
@@ -119,5 +114,241 @@
       return result;
     },
   });
+
+  /*
+   * Block page loading until we got user options
+   */
+  let pendingChunks = [];
+  Object.defineProperty(window, 'webpackJsonp', {
+    configurable: true,
+    enumerable: false,
+    get() { return (void 0); },
+    set(value) {
+      delete window.webpackJsonp;
+      window.webpackJsonp = value;
+      // in Webpack 3, webpackJsonp is Function
+      // in Webpack 4, webpackJsonp is an Array, while its push is the Function
+      // Login page uses Webpack 3, and we simply ignore it
+      if (!Array.isArray(value)) return;
+      Object.defineProperty(value, 'push', {
+        configurable: true,
+        enumerable: false,
+        get() {
+          return Object.getPrototypeOf(this).push;
+        },
+        set(webpackJsonpPush) {
+          delete value.push;
+          value.push = function push(config) {
+            if (userOptions == null) {
+              pendingChunks.push(config);
+              return 1;
+            } else {
+              return webpackJsonpPush.call(this, config);
+            }
+          };
+        },
+      });
+    },
+  });
+  userOptionsReady.addCallback(function (option) {
+    pendingChunks.splice(0).forEach(function (chunk) {
+      window.webpackJsonp.push(chunk);
+    });
+    pendingChunks = null;
+  });
+
+  /*
+   * Util
+   */
+  const arrayFilterInline = function (array, filter) {
+    let len = array.length, i, j;
+    for (i = j = 0; i < len; i++) {
+      if (filter(array[i])) {
+        array[j++] = array[i];
+      }
+    }
+    array.length = j;
+    return array;
+  };
+
+  /*
+   * Features
+   */
+
+  /*
+   * Common store navigation
+   */
+  const getLayoutItemFromState = state => (prefix, subPrefix) => {
+    const list = Object.keys(state.urt)
+      .filter(name => name.split('-')[0] === prefix)
+      .map(name => state.urt[name]);
+    if (!subPrefix) return list;
+    return list.map(mute(inner => (
+      inner.entries.filter(entry => entry.entryId.split('-')[0] === subPrefix)
+    ))).reduce((a, b) => a.concat(b || []), []);
+  };
+
+  /*
+   * Remove any Promoted contents
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('hidePromoted', true)) return;
+    afterStoreReducer.addCallback(function (state) {
+      const getLayoutItem = ignoreException({ fallback: () => [] })(getLayoutItemFromState(state));
+      [{
+        // Trends
+        ruleName: 'Trend',
+        getLists: mute(() => (getLayoutItem('explore', 'trends').map(item => item.content.items))),
+        isPromoted: mute(item => item.content.promotedMetadata),
+      }, {
+        // Tweet; Home
+        ruleName: 'Tweet Home',
+        getLists: mute(() => getLayoutItem('home').map(item => item.entries)),
+        isPromoted: mute(item => item.content.promotedMetadata),
+      }, {
+        // Tweet; User
+        ruleName: 'Tweet User',
+        getLists: mute(() => getLayoutItem('userTweets').map(item => item.entries)),
+        isPromoted: mute(item => item.content.promotedMetadata),
+      }, {
+        // Who to follow
+        ruleName: 'Follow',
+        getLists: mute(() => (getLayoutItem('userTweets', 'whoToFollow').map(item => item.content.items))),
+        isPromoted: mute(item => item.content.promotedMetadata),
+      }, {
+        // Who to follow
+        ruleName: 'User Suggest',
+        getLists: mute(() => [state.recommendations.profile_accounts_sidebar.recommendations]),
+        isPromoted: mute(item => state.entities.users.entities[item.user_id].promoted_content),
+      }].forEach(({ ruleName, getLists, isPromoted }) => {
+        const lists = getLists() || [];
+        lists.forEach(list => {
+          if (!list || !Array.isArray(list)) return;
+          arrayFilterInline(list, item => {
+            if (isPromoted(item)) {
+              if (debugEnabled) {
+                console.log('BlockTwitterPromoted | Promoted blocked by %s: %o', ruleName, item);
+              }
+              return false;
+            }
+            return true;
+          });
+        });
+      });
+    });
+  });
+
+  /*
+   * Annoying tweet like contents in timeline
+   * e.g. tweets someone liked
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('hideTimelineSuggestionTweet', false)) return;
+    afterStoreReducer.addCallback(function (state) {
+      const homeList = getLayoutItemFromState(state)('home');
+      homeList.forEach(home => {
+        arrayFilterInline(home.entries, mute(item => {
+          const injectionType = item.itemMetadata.clientEventInfo.details.timelinesDetails.injectionType;
+          const isAllowed = ['RankedTimelineTweet', 'RankedConversation', 'OrganicConversation', 'RankedOrganicTweet'].includes(injectionType);
+          if (!isAllowed && debugEnabled) {
+            console.log('BlockTwitterPromoted | Special tweet blocked by injection type %s: %o', injectionType, item);
+          }
+          return isAllowed;
+        }));
+      });
+    });
+  });
+
+  /*
+   * Who to follow on timeline
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('hideTimelineModule', false)) return;
+    afterStoreReducer.addCallback(function (state) {
+      const getLayoutItem = getLayoutItemFromState(state);
+      const userTweetsList = getLayoutItem('userTweets');
+      const home = getLayoutItem('home');
+      [].concat(userTweetsList, home).forEach(tweetList => {
+        arrayFilterInline(tweetList.entries, mute(item => {
+          if (item.type !== 'timelineModule') return true;
+          if (item.content.displayType === 'VerticalConversation') return true;
+          if (debugEnabled) {
+            console.log('BlockTwitterPromoted | Timeline module removed: %o', item);
+          }
+          return false;
+        }));
+      });
+    });
+  });
+
+  /*
+   * Hide tweet cards
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('hideTweetCard', false)) return;
+    afterStoreReducer.addCallback(function (state) {
+      const entities = state.entities.tweets.entities;
+      Object.keys(entities).forEach(id => {
+        const tweet = entities[id];
+        if (tweet.card) {
+          if (debugEnabled) console.log('BlockTwitterPromoted | Remove tweet card %o: %o', id, tweet.card);
+          delete tweet.card;
+        }
+      });
+    });
+  });
+
+  /*
+   * Hide trends cards
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('hideTrendCard', false)) return;
+    afterStoreReducer.addCallback(function (state) {
+      const getLayoutItem = getLayoutItemFromState(state);
+      const trendLists = getLayoutItem('explore', 'trends');
+      trendLists.forEach(list => {
+        list.content.items.forEach(item => {
+          if (item.content.associatedCardUrls && item.content.associatedCardUrls.length) {
+            if (debugEnabled) console.log('BlockTwitterPromoted | Remove trend card %o: %o', item.content.associatedCardUrls, item);
+            item.content.associatedCardUrls = [];
+          }
+        });
+      });
+    });
+  });
+
+  /*
+   * Show latest tweets; not home (top tweets)
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('useLatestTimeline', false)) return;
+    beforeStoreReducer.addCallback(function (action, state) {
+      if (action.type !== 'rweb/homeTimeline/CONFIGURATION_LOADED') return action;
+      if (typeof action.payload.useLatest !== 'boolean') return action;
+      Object.assign(action.payload, {
+        useLatest: true,
+        lastActiveOnLatestTimestamp: window.__META_DATA__.serverDate,
+        inactivityThresholdMs: null,
+        autoSwitchTimestamp: null,
+        lastFrustrationEventTimestamp: null,
+      });
+      if (debugEnabled) {
+        console.log('BlockTwitterPromoted | Switched to Latest Timeline');
+      }
+      return action;
+    });
+  });
+
+  /*
+   * Options
+   */
+  window.__btpUserOptions__ = function (data) {
+    const options = JSON.parse(data);
+    if (debugEnabled) {
+      console.log('BlockTwitterPromoted | user options loaded: %o', options);
+    }
+    delete window.__btpUserOptions__;
+    userOptionsReady.callbacks.splice(0).forEach(callback => callback(options));
+  };
 
 }());

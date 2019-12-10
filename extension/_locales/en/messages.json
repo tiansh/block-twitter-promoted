@@ -4,5 +4,26 @@
   },
   "extensionDescription": {
     "message": "Block promoted tweets, trends, and, follows."
+  },
+  "optionTitle": {
+    "message": "Options for Block Twitter Promoted"
+  },
+  "optionHidePromoted": {
+    "message": "Hide promoted contents"
+  },
+  "optionHideTimelineSuggestionTweet": {
+    "message": "Hide suggestion tweets on timeline (e.g. Someone liked tweet)"
+  },
+  "optionHideTimelineModule": {
+    "message": "Hide modules on timeline (e.g. Who To Follow)"
+  },
+  "optionHideTweetCard": {
+    "message": "Hide cards in tweets"
+  },
+  "optionHideTrendCard": {
+    "message": "Hide cards in trends"
+  },
+  "optionUseLatestTimeline": {
+    "message": "Always show Latest Tweets instead of top Tweets"
   }
 }
