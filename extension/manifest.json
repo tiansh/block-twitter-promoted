@@ -36,10 +36,6 @@
     "page": "options/options.html"
   },
 
-  "web_accessible_resources": [
-    "external/*"
-  ],
-
   "applications": {
     "gecko": {
       "id": "{47fab76c-ec06-42cf-b459-6b5a47e55049}",

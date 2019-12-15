@@ -1,0 +1,33 @@
+body {
+  font: message-box;
+  font-size: 15px;
+  line-height: 26px;
+  cursor: default;
+  -moz-user-select: none;
+  user-select: none;
+  padding: 20px 5px;
+  margin: 0;
+}
+
+body::after {
+  content: " ";
+  background: var(--in-content-box-background);
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
+
+#config_panel {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  grid-gap: 10px 10px;
+  position: relative;
+  z-index: 2;
+}
+
+#config_panel .config {
+  display: contents;
+}

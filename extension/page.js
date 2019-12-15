@@ -1,6 +1,6 @@
 ; (function () {
 
-  const debugEnabled = localStorage.getItem('__block_twitter_promoted_debug__') === 'enable';
+  let enableDebug = false;
   let userOptions = null;
 
   /*
@@ -11,7 +11,7 @@
     try {
       return f.apply(this, args);
     } catch (e) {
-      if (log && debugEnabled) {
+      if (log && enableDebug) {
         console.error(log, e);
       }
     }
@@ -19,6 +19,9 @@
   };
   const mute = ignoreException();
 
+  /*
+   * We use callback instead of Promise just because we cannot do that async
+   */
   class CallbackCollection {
     constructor(wrap) {
       this.callbacks = [];
@@ -30,8 +33,8 @@
   }
 
   // Callback before / after reducer of store
-  const beforeStoreReducer = new CallbackCollection(mute);
-  const afterStoreReducer = new CallbackCollection(ignoreException({ fallback: x => x }));
+  const beforeStoreReducer = new CallbackCollection(ignoreException({ fallback: x => x }));
+  const afterStoreReducer = new CallbackCollection(mute);
   // Callback when options is ready
   const userOptionsReady = new CallbackCollection(mute);
 
@@ -52,8 +55,9 @@
    * Wrap the store object so we can run some codes before / after reducer
    */
   const wrapStore = function (Store) {
-    if (debugEnabled) {
+    if (enableDebug) {
       console.log('BlockTwitterPromoted | Got Redux store: %o', Store);
+      window.Store = Store;
     }
     Store.dispatch = (function (/** @type {Function} */dispatch) {
       return function (action) {
@@ -106,7 +110,7 @@
           observableSymbol(result);
           window.Symbol = target;
         } catch (e) {
-          if (debugEnabled) {
+          if (enableDebug) {
             console.error('BlockTwitterPromoted | Error:\n%o', e);
           }
         }
@@ -226,7 +230,7 @@
           if (!list || !Array.isArray(list)) return;
           arrayFilterInline(list, item => {
             if (isPromoted(item)) {
-              if (debugEnabled) {
+              if (enableDebug) {
                 console.log('BlockTwitterPromoted | Promoted blocked by %s: %o', ruleName, item);
               }
               return false;
@@ -250,7 +254,7 @@
         arrayFilterInline(home.entries, mute(item => {
           const injectionType = item.itemMetadata.clientEventInfo.details.timelinesDetails.injectionType;
           const isAllowed = ['RankedTimelineTweet', 'RankedConversation', 'OrganicConversation', 'RankedOrganicTweet'].includes(injectionType);
-          if (!isAllowed && debugEnabled) {
+          if (!isAllowed && enableDebug) {
             console.log('BlockTwitterPromoted | Special tweet blocked by injection type %s: %o', injectionType, item);
           }
           return isAllowed;
@@ -272,28 +276,11 @@
         arrayFilterInline(tweetList.entries, mute(item => {
           if (item.type !== 'timelineModule') return true;
           if (item.content.displayType === 'VerticalConversation') return true;
-          if (debugEnabled) {
+          if (enableDebug) {
             console.log('BlockTwitterPromoted | Timeline module removed: %o', item);
           }
           return false;
         }));
-      });
-    });
-  });
-
-  /*
-   * Hide tweet cards
-   */
-  userOptionsReady.addCallback(function () {
-    if (!getOption('hideTweetCard', false)) return;
-    afterStoreReducer.addCallback(function (state) {
-      const entities = state.entities.tweets.entities;
-      Object.keys(entities).forEach(id => {
-        const tweet = entities[id];
-        if (tweet.card) {
-          if (debugEnabled) console.log('BlockTwitterPromoted | Remove tweet card %o: %o', id, tweet.card);
-          delete tweet.card;
-        }
       });
     });
   });
@@ -309,7 +296,7 @@
       trendLists.forEach(list => {
         list.content.items.forEach(item => {
           if (item.content.associatedCardUrls && item.content.associatedCardUrls.length) {
-            if (debugEnabled) console.log('BlockTwitterPromoted | Remove trend card %o: %o', item.content.associatedCardUrls, item);
+            if (enableDebug) console.log('BlockTwitterPromoted | Remove trend card %o: %o', item.content.associatedCardUrls, item);
             item.content.associatedCardUrls = [];
           }
         });
@@ -332,11 +319,18 @@
         autoSwitchTimestamp: null,
         lastFrustrationEventTimestamp: null,
       });
-      if (debugEnabled) {
+      if (enableDebug) {
         console.log('BlockTwitterPromoted | Switched to Latest Timeline');
       }
       return action;
     });
+  });
+
+  beforeStoreReducer.addCallback(function (action, state) {
+    if (enableDebug) {
+      console.log('Dispatch: %o', action);
+    }
+    return action;
   });
 
   /*
@@ -344,7 +338,8 @@
    */
   window.__btpUserOptions__ = function (data) {
     const options = JSON.parse(data);
-    if (debugEnabled) {
+    enableDebug = options.enableDebug || false;
+    if (enableDebug) {
       console.log('BlockTwitterPromoted | user options loaded: %o', options);
     }
     delete window.__btpUserOptions__;

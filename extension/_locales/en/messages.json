@@ -3,7 +3,7 @@
     "message": "Block Twitter Promoted"
   },
   "extensionDescription": {
-    "message": "Block promoted tweets, trends, and, follows."
+    "message": "Block promoted contents including tweets, trends, and, follows, hide more annoying contents, switch to Latest Tweets for home page on Twitter."
   },
   "optionTitle": {
     "message": "Options for Block Twitter Promoted"
@@ -17,13 +17,13 @@
   "optionHideTimelineModule": {
     "message": "Hide modules on timeline (e.g. Who To Follow)"
   },
-  "optionHideTweetCard": {
-    "message": "Hide cards in tweets"
-  },
   "optionHideTrendCard": {
     "message": "Hide cards in trends"
   },
   "optionUseLatestTimeline": {
     "message": "Always show Latest Tweets instead of top Tweets"
+  },
+  "optionEnableDebug": {
+    "message": "Show debug info in console"
   }
 }
