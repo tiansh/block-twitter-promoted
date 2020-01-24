@@ -144,8 +144,7 @@
           delete value.push;
           value.push = function push(config) {
             if (userOptions == null) {
-              pendingChunks.push(config);
-              return 1;
+              return pendingChunks.push(config);
             } else {
               return webpackJsonpPush.call(this, config);
             }
@@ -224,6 +223,11 @@
         ruleName: 'User Suggest',
         getLists: mute(() => [state.recommendations.profile_accounts_sidebar.recommendations]),
         isPromoted: mute(item => state.entities.users.entities[item.user_id].promoted_content),
+      }, {
+        // Explore
+        ruleName: 'Explore',
+        getLists: mute(() => getLayoutItem('explore').map(item => item.entries)),
+        isPromoted: mute(item => item.content.promotedMetadata),
       }].forEach(({ ruleName, getLists, isPromoted }) => {
         const lists = getLists() || [];
         lists.forEach(list => {
@@ -279,6 +283,24 @@
           if (enableDebug) {
             console.log('BlockTwitterPromoted | Timeline module removed: %o', item);
           }
+          return false;
+        }));
+      });
+    });
+  });
+
+  /**
+   * Injections in timeline
+   */
+  userOptionsReady.addCallback(function () {
+    if (!getOption('hideTimelineInjections', false)) return;
+    afterStoreReducer.addCallback(function (state) {
+      const getLayoutItem = getLayoutItemFromState(state);
+      const userTweetsList = getLayoutItem('userTweets');
+      const home = getLayoutItem('home');
+      [].concat(userTweetsList, home).forEach(tweetList => {
+        arrayFilterInline(tweetList.injections, mute(item => {
+          console.log('BlockTwitterPromoted | Timeline injection removed: %o', item);
           return false;
         }));
       });

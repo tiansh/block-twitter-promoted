@@ -17,6 +17,9 @@
   "optionHideTimelineModule": {
     "message": "Hide modules on timeline (e.g. Who To Follow)"
   },
+  "optionHideTimelineInjections": {
+    "message": "Hide injections on timeline (e.g. Turn on notifications)"
+  },
   "optionHideTrendCard": {
     "message": "Hide cards in trends"
   },

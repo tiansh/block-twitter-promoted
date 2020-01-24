@@ -21,6 +21,11 @@
     initial: false,
     version: 3,
   }, {
+    id: 'hideTimelineInjections',
+    template: 'optionHideTimelineInjections',
+    initial: false,
+    version: 5,
+  }, {
     id: 'hideTrendCard',
     template: 'optionHideTrendCard',
     initial: false,
