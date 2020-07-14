@@ -219,9 +219,10 @@
         getLists: mute(() => (getLayoutItem('userTweets', 'whoToFollow').map(item => item.content.items))),
         isPromoted: mute(item => item.content.promotedMetadata),
       }, {
-        // Who to follow
+        // Who to follow / You might like
         ruleName: 'User Suggest',
-        getLists: mute(() => [state.recommendations.profile_accounts_sidebar.recommendations]),
+        getLists: mute(() => Object.keys(state.recommendations)
+          .filter(key => key.startsWith('profile_accounts_sidebar')).map(key => state.recommendations[key].recommendations)),
         isPromoted: mute(item => state.entities.users.entities[item.user_id].promoted_content),
       }, {
         // Explore
