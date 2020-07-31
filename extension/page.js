@@ -204,6 +204,11 @@
         getLists: mute(() => (getLayoutItem('explore', 'trends').map(item => item.content.items))),
         isPromoted: mute(item => item.content.promotedMetadata),
       }, {
+        // What's happening
+        ruleName: 'What\'s happening',
+        getLists: mute(() => (getLayoutItem('explore', 'Guide').map(item => item.content.items))),
+        isPromoted: mute(item => item.content.promotedMetadata),
+      }, {
         // Tweet; Home
         ruleName: 'Tweet Home',
         getLists: mute(() => getLayoutItem('home').map(item => item.entries)),
