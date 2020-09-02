@@ -123,39 +123,22 @@
    * Block page loading until we got user options
    */
   let pendingChunks = [];
-  Object.defineProperty(window, 'webpackJsonp', {
+  let innerArray = window.webpackJsonp || [];
+  let webpackJsonp = window.webpackJsonp = Object.create(innerArray);
+  Object.defineProperty(webpackJsonp, 'push', {
     configurable: true,
     enumerable: false,
-    get() { return (void 0); },
-    set(value) {
-      delete window.webpackJsonp;
-      window.webpackJsonp = value;
-      // in Webpack 3, webpackJsonp is Function
-      // in Webpack 4, webpackJsonp is an Array, while its push is the Function
-      // Login page uses Webpack 3, and we simply ignore it
-      if (!Array.isArray(value)) return;
-      Object.defineProperty(value, 'push', {
-        configurable: true,
-        enumerable: false,
-        get() {
-          return Object.getPrototypeOf(this).push;
-        },
-        set(webpackJsonpPush) {
-          delete value.push;
-          value.push = function push(config) {
-            if (userOptions == null) {
-              return pendingChunks.push(config);
-            } else {
-              return webpackJsonpPush.call(this, config);
-            }
-          };
-        },
-      });
+    get() {
+      return pendingChunks.push.bind(pendingChunks);
+    },
+    set(push) {
+      innerArray.push = push;
     },
   });
   userOptionsReady.addCallback(function (option) {
+    delete webpackJsonp.push;
     pendingChunks.splice(0).forEach(function (chunk) {
-      window.webpackJsonp.push(chunk);
+      webpackJsonp.push(chunk);
     });
     pendingChunks = null;
   });
