@@ -207,10 +207,11 @@
         getLists: mute(() => (getLayoutItem('userTweets', 'whoToFollow').map(item => item.content.items))),
         isPromoted: mute(item => item.content.promotedMetadata),
       }, {
-        // Who to follow / You might like
+        // Who to follow / You might like / Suggested
         ruleName: 'User Suggest',
         getLists: mute(() => Object.keys(state.recommendations)
-          .filter(key => key.startsWith('profile_accounts_sidebar')).map(key => state.recommendations[key].recommendations)),
+          .filter(key => key.startsWith('profile_accounts_sidebar') || key.startsWith('profile-cluster-follow'))
+          .map(key => state.recommendations[key].recommendations)),
         isPromoted: mute(item => state.entities.users.entities[item.user_id].promoted_content),
       }, {
         // Explore
