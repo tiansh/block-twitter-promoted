@@ -91,8 +91,12 @@
       configurable: true,
       enumerable: false,
       set: function (value) {
-        delete Object.prototype[observable];
-        this[observable] = value;
+        Object.defineProperty(this, observable, {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value,
+        });
         wrapStore(this);
       },
     });
