@@ -201,6 +201,11 @@
         getLists: mute(() => getLayoutItem('home').map(item => item.entries)),
         isPromoted: mute(item => item.content.promotedMetadata),
       }, {
+        // Tweet; Search
+        ruleName: 'Tweet Search',
+        getLists: mute(() => getLayoutItem('search').map(item => item.entries)),
+        isPromoted: mute(item => item.content.promotedMetadata),
+      }, {
         // Tweet; User
         ruleName: 'Tweet User',
         getLists: mute(() => getLayoutItem('userTweets').map(item => item.entries)),
