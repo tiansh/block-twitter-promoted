@@ -57,7 +57,9 @@
   const wrapStore = function (Store) {
     if (enableDebug) {
       console.log('BlockTwitterPromoted | Got Redux store: %o', Store);
-      window.Store = Store;
+      if (typeof window.Store === 'undefined') window.Store = [Store];
+      else if (Array.isArray(window.Store)) window.Store.push(Store);
+      else window.Store = [window.Store, Store];
     }
     Store.dispatch = (function (/** @type {Function} */dispatch) {
       return function (action) {
