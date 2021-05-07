@@ -104,26 +104,7 @@
     });
   };
 
-  /*
-   * Wrap Symbol so we can get Symbol('observable') which is used by Redux Store
-   */
-  window.Symbol = new Proxy(window.Symbol, {
-    apply: function (target, that, args) {
-      const [description] = args;
-      const result = target.apply(that, args);
-      if (description === 'observable') {
-        try {
-          observableSymbol(result);
-          window.Symbol = target;
-        } catch (e) {
-          if (enableDebug) {
-            console.error('BlockTwitterPromoted | Error:\n%o', e);
-          }
-        }
-      }
-      return result;
-    },
-  });
+  observableSymbol(Symbol.observable || '@@observable');
 
   /*
    * Block page loading until we got user options
