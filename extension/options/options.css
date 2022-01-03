@@ -1,23 +1,14 @@
 body {
-  font: message-box;
-  font-size: 15px;
-  line-height: 26px;
+  font: "system-ui", sans-serif;
+  font-size: 14px;
+  line-height: 20px;
   cursor: default;
-  -moz-user-select: none;
-  user-select: none;
-  padding: 20px 5px;
+  padding: 20px 20px;
   margin: 0;
 }
 
-body::after {
-  content: " ";
-  background: var(--in-content-box-background);
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1;
+#popup:target {
+  width: 400px;
 }
 
 #config_panel {
@@ -31,3 +22,27 @@ body::after {
 #config_panel .config {
   display: contents;
 }
+
+input[type=checkbox] {
+  margin: 0;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #3b3b3b;
+    color: white;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    background: #f7f7f7;
+    color: black;
+  }
+}
+

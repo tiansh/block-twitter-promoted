@@ -7,14 +7,14 @@
   "default_locale": "en",
 
   "icons": {
-    "48": "icon.svg"
+    "48": "icon.png"
   },
 
   "permissions": [
     "storage",
 
-    "https://twitter.com/*",
-    "https://mobile.twitter.com/*"
+    "https://twitter.com/",
+    "https://mobile.twitter.com/"
   ],
 
   "content_scripts": [
@@ -32,19 +32,15 @@
   ],
 
   "options_ui": {
-    "browser_style": false,
+    "browser_style": true,
     "page": "options/options.html"
   },
 
+  "browser_action": {
+    "default_popup": "options/options.html#popup"
+  },
   "web_accessible_resources": [
     "page.js"
-  ],
-
-  "applications": {
-    "gecko": {
-      "id": "{47fab76c-ec06-42cf-b459-6b5a47e55049}",
-      "strict_min_version": "68.0"
-    }
-  }
+  ]
 
 }

@@ -1,5 +1,15 @@
 ; (async function () {
 
+  const browser = {};
+  browser.i18n = chrome.i18n;
+  browser.storage = { sync: {} };
+  browser.storage.sync.get = key => new Promise(resolve => {
+    chrome.storage.sync.get(key, resolve);
+  });
+  browser.storage.sync.set = data => new Promise(resolve => {
+    chrome.storage.sync.set(data, resolve);
+  });
+
   /** @type {HTMLDivElement} */
   const configPanel = document.getElementById('config_panel');
   /** @type {HTMLTemplateElement} */
