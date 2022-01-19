@@ -1,0 +1,32 @@
+{
+  "extensionName": {
+    "message": "Block Twitter Promoted"
+  },
+  "extensionDescription": {
+    "message": "Bloqueia conteúdo promovido que inclui, tuítes, tendências e seguidores, oculta conteúdo chato e alterna a homepage do Twitter para para os últimos tuítes."
+  },
+  "optionTitle": {
+    "message": "Opções do Block Twitter Promoted"
+  },
+  "optionHidePromoted": {
+    "message": "Ocultar conteúdo promovido"
+  },
+  "optionHideTimelineSuggestionTweet": {
+    "message": "Ocultar sugestão de tuítes na timeline (por ex: Alguém gostou do tuíte)"
+  },
+  "optionHideTimelineModule": {
+    "message": "Ocultar módulos na timeline (por ex: Quem Seguir)"
+  },
+  "optionHideTimelineInjections": {
+    "message": "Ocultar inserções na timeline (por ex: Ativar notificações)"
+  },
+  "optionHideTrendCard": {
+    "message": "Ocultar cartões de tendências"
+  },
+  "optionUseLatestTimeline": {
+    "message": "Sempre mostrar os últimos tuítes, ao invés dos principais tuítes"
+  },
+  "optionEnableDebug": {
+    "message": "Mostrar informações de depuração no console"
+  }
+}
