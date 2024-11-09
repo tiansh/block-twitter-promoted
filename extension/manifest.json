@@ -3,7 +3,7 @@
   "manifest_version": 2,
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
-  "version": "0.1.18",
+  "version": "0.2.19",
   "default_locale": "en",
 
   "icons": {
@@ -14,14 +14,18 @@
     "storage",
 
     "https://twitter.com/",
-    "https://mobile.twitter.com/"
+    "https://mobile.twitter.com/",
+    "https://x.com/",
+    "https://mobile.x.com/"
   ],
 
   "content_scripts": [
     {
       "matches": [
         "https://twitter.com/*",
-        "https://mobile.twitter.com/*"
+        "https://mobile.twitter.com/*",
+        "https://x.com/*",
+        "https://mobile.x.com/*"
       ],
       "js": [
         "content.js"
